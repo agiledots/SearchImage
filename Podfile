@@ -6,7 +6,7 @@ target 'SearchImage' do
   use_frameworks!
 
   # Pods for SearchImage
-  pod 'AssetsPickerViewController'
+  pod 'AssetsPickerViewController', '~> 1.0'
   pod 'SQLite.swift', '~> 0.11.3'
   pod 'TesseractOCRiOS', '4.0.0'
 
