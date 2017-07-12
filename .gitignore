@@ -69,7 +69,7 @@ fastlane/test_output
 
 
 # Pod
-Pod/*
+Pods/*
 Podfile.lock
 
 

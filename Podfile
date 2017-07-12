@@ -9,6 +9,8 @@ target 'SearchImage' do
   pod 'AssetsPickerViewController', '~> 1.0'
   pod 'SQLite.swift', '~> 0.11.3'
   pod 'TesseractOCRiOS', '4.0.0'
+  
+  pod 'RealmSwift', '~> 2.0'
 
 
 end

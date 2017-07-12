@@ -2,9 +2,6 @@
 //  RootViewController.swift
 //  SearchImage
 //
-//  Created by LU XIAOQUAN on 2017/06/30.
-//  Copyright © 2017年 PM001192. All rights reserved.
-//
 
 import Foundation
 import UIKit
@@ -14,65 +11,90 @@ import PhotosUI
 import SQLite
 import TesseractOCR
 
-class RootViewController: UICollectionViewController {
+class RootViewController: UIViewController {
 
     // MARK: - Properties
-    fileprivate let reuseIdentifier = "PhotoCell"
+    fileprivate let cellReuseIdentifier = "PhotoCell"
+    fileprivate let headerReuseIdentifier = "PhotoHeader"
     
     fileprivate let sectionInsets = UIEdgeInsets(top: 5.0, left: 1.0, bottom: 5.0, right: 1.0)
     
     fileprivate let itemsPerRow: CGFloat = 4
 
-    fileprivate var items:[URL] = []
-    fileprivate var rows:[Row] = []
+    fileprivate var items:[Photo] = [] {
+        didSet {
+            self.collectionView.reloadData()
+        }
+    }
     
     fileprivate var tesseract: G8Tesseract!
+    
+    var searchController: UISearchController!
+    
+    var collectionView: UICollectionView!
+    
+    var searchBar: UISearchBar!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        // ORC
         tesseract = G8Tesseract(language: "eng")
-//        tesseract.delegate = self
+        tesseract.delegate = self
 //        tesseract.charWhitelist = "01234567890"
-
         
+        let statusBarHeight = UIApplication.shared.statusBarFrame.height
+        let navigationBarHeight = self.navigationController?.navigationBar.frame.size.height
+        let spaceHeight = statusBarHeight + navigationBarHeight!
+        
+        // UISearchBar
+        searchBar = UISearchBar(frame: CGRect(x: 0, y: spaceHeight, width: self.view.bounds.width, height: 50))
+        searchBar.delegate = self
+        searchBar.placeholder = "検索"
+        searchBar.searchBarStyle = .default //なくてもいい
+        searchBar.barStyle = .default //なくてもいい
+        searchBar.sizeToFit()
+        self.view.addSubview(searchBar)
+        
+        // UIColleciontView
+        let layout = UICollectionViewFlowLayout()
+        let frame = CGRect(x: 0, y: spaceHeight + 50, width: self.view.bounds.width, height: self.view.bounds.height - 50)
+        collectionView = UICollectionView(frame: frame, collectionViewLayout: layout)
+        collectionView.register(UINib(nibName: "PhotoCell", bundle: Bundle.main), forCellWithReuseIdentifier: cellReuseIdentifier)
+        collectionView.delegate = self
+        collectionView.dataSource = self
+        collectionView.backgroundColor = UIColor.white
+        self.view.addSubview(collectionView)
+        
+        // UIBarButtonItem
         self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add
-            , target: self, action: #selector(RootViewController.addPhotos))
-        
+            , target: self, action: #selector(addPhotos))
         self.navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .refresh
-            , target: self, action: #selector(RootViewController.loadData))
+            , target: self, action: #selector(reloadData))
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
-        self.loadData()
+        self.reloadData()
     }
     
-    func loadData() {
+    func reloadData() {
         // get all images
         self.items = []
         
-        let rootPath = getImageDirectory()!
-        
-        do {
-            let files = try FileManager.default.contentsOfDirectory(atPath: (rootPath.path))
-            files.forEach({ (file) in
-                let file = rootPath.appendingPathComponent(file)
-                self.items.append(file)
-            })
-        } catch {
-        
+        if self.searchBar.text != "" {
+            if let photos = PhotoManager.shared.query(by: self.searchBar.text!) {
+                self.items = Array(photos)
+            }
+        } else {
+            //
+            if let photos = PhotoManager.shared.queryAll() {
+                self.items = Array(photos)
+            }
         }
-        
-        self.collectionView?.reloadData()
-        
-        print(" item: \(self.items)")
-        
-        ImageModel.shared.selectAll()?.forEach({ (row) in
-            print(row)
-            self.rows.append(row)
-        })
+
+        print("new rows \(self.items)")
     }
 }
 
@@ -106,8 +128,29 @@ extension RootViewController: AssetsPickerViewControllerDelegate{
                 saveImage(asset: asset, path: imageFile)
                 saveThumbnail(asset: asset, path: thumbnailFile)
                 
-                ImageModel.shared.insert(data: ["filename": filename, "date": "\(Date())", "memo": ""])
+                DispatchQueue.global().async {
+                    // ocr
+                    let data = try? Data(contentsOf: imageFile)
+                    self.tesseract.image = UIImage(data: data!)
+                    self.tesseract.recognize()
+                    
+                    // new model
+                    let photo = Photo()
+                    photo.filename = filename
+                    photo.memo = self.tesseract.recognizedText
+                    
+                    print("new objects: \(photo)")
+                    //
+                    DispatchQueue.main.sync {
+                        // insert to db
+                        PhotoManager.shared.add(photo: photo)
+                        
+                        self.reloadData()
+                    }
+                }
             }
+            
+
         }
         
         if !controller.isBeingDismissed {
@@ -116,12 +159,10 @@ extension RootViewController: AssetsPickerViewControllerDelegate{
     }
     
     func assetsPicker(controller: AssetsPickerViewController, shouldSelect asset: PHAsset, at indexPath: IndexPath) -> Bool {
-        
         return true
     }
     
     func assetsPicker(controller: AssetsPickerViewController, didSelect asset: PHAsset, at indexPath: IndexPath) {
-    
     }
     
     func assetsPicker(controller: AssetsPickerViewController, shouldDeselect asset: PHAsset, at indexPath: IndexPath) -> Bool {
@@ -129,7 +170,6 @@ extension RootViewController: AssetsPickerViewControllerDelegate{
     }
     
     func assetsPicker(controller: AssetsPickerViewController, didDeselect asset: PHAsset, at indexPath: IndexPath) {
-        
     }
     
     func getDirectory(folder: String) -> URL? {
@@ -178,7 +218,7 @@ extension RootViewController: AssetsPickerViewControllerDelegate{
         })
     }
     
-    func saveImage(asset: PHAsset, path: URL){
+    func saveImage(asset: PHAsset, path: URL) {
         let manager = PHImageManager.default()
         
         let options = PHImageRequestOptions()
@@ -198,37 +238,53 @@ extension RootViewController: AssetsPickerViewControllerDelegate{
 
 }
 
-
-
 // UICollectionViewDelegate
-extension RootViewController {
-    override public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        
+extension RootViewController : UICollectionViewDelegate {
+    
+    public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         print("click item")
     }
+    
+//    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
+//        
+//        return CGSize(width: self.view.bounds.width, height: 50)
+//    }
+    
+//  func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
+//        
+//        let reuseView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: "searchReuseIdentifier", for: indexPath)
+//        if kind == UICollectionElementKindSectionHeader {
+//            
+//            
+//        }
+//        
+//        return reuseView
+//    }
 }
 
 // MARK: - UICollectionViewDataSource
-extension RootViewController {
-    //1
-    override func numberOfSections(in collectionView: UICollectionView) -> Int {
-        return 1 //searches.count
+extension RootViewController : UICollectionViewDataSource{
+    
+    func numberOfSections(in collectionView: UICollectionView) -> Int {
+        return 1
     }
     
-    //2
-    override func collectionView(_ collectionView: UICollectionView,
+    func collectionView(_ collectionView: UICollectionView,
                                  numberOfItemsInSection section: Int) -> Int {
-        return items.count //searches[section].searchResults.count
+        return items.count
     }
     
-    //3
-    override func collectionView(_ collectionView: UICollectionView,
+    func collectionView(_ collectionView: UICollectionView,
                                  cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier,
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: cellReuseIdentifier,
                                                       for: indexPath) as! PhotoCell
         
-        cell.imageView.image = UIImage(contentsOfFile: self.items[indexPath.row].path)
+        // cell
+        if let imageUrl = self.items[indexPath.row].imageUrl {
+            let data = try? Data(contentsOf: imageUrl)
+            cell.imageView.image = UIImage(data: data!)
+        }
         
         return cell
     }
@@ -258,5 +314,37 @@ extension RootViewController : UICollectionViewDelegateFlowLayout {
     // 4
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
         return sectionInsets.left
+    }
+}
+
+// UISearchBarDelegate
+extension RootViewController: UISearchBarDelegate {
+    
+    // called when text changes (including clear)
+    public func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        
+        if searchText == "" {
+            reloadData()
+        } else {
+            if let photos = PhotoManager.shared.query(by: searchText) {
+                self.items = Array(photos)
+            }
+        }
+    }
+    
+}
+
+extension RootViewController: G8TesseractDelegate{
+    
+    public func progressImageRecognition(for tesseract: G8Tesseract!) {
+        
+    }
+
+    public func shouldCancelImageRecognition(for tesseract: G8Tesseract!) -> Bool {
+        return false
+    }
+    
+    public func preprocessedImage(for tesseract: G8Tesseract!, sourceImage: UIImage!) -> UIImage! {
+        return sourceImage
     }
 }
