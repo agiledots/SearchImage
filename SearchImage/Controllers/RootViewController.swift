@@ -10,6 +10,7 @@ import Photos
 import PhotosUI
 import SQLite
 import TesseractOCR
+import Lightbox
 
 class RootViewController: UIViewController {
 
@@ -27,7 +28,7 @@ class RootViewController: UIViewController {
         }
     }
     
-    fileprivate var tesseract: G8Tesseract!
+//    fileprivate var tesseract: G8Tesseract!
     
     var searchController: UISearchController!
     
@@ -37,11 +38,6 @@ class RootViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        // ORC
-        tesseract = G8Tesseract(language: "eng")
-        tesseract.delegate = self
-//        tesseract.charWhitelist = "01234567890"
         
         let statusBarHeight = UIApplication.shared.statusBarFrame.height
         let navigationBarHeight = self.navigationController?.navigationBar.frame.size.height
@@ -131,13 +127,17 @@ extension RootViewController: AssetsPickerViewControllerDelegate{
                 DispatchQueue.global().async {
                     // ocr
                     let data = try? Data(contentsOf: imageFile)
-                    self.tesseract.image = UIImage(data: data!)
-                    self.tesseract.recognize()
+                    
+                    // ORC
+                    let tesseract = G8Tesseract(language: "eng")
+                    tesseract?.charWhitelist = "01234567890"
+                    tesseract?.image = UIImage(data: data!)
+                    tesseract?.recognize()
                     
                     // new model
                     let photo = Photo()
                     photo.filename = filename
-                    photo.memo = self.tesseract.recognizedText
+                    photo.memo = (tesseract?.recognizedText)!
                     
                     print("new objects: \(photo)")
                     //
@@ -243,6 +243,27 @@ extension RootViewController : UICollectionViewDelegate {
     
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         print("click item")
+        
+        
+        var images: [LightboxImage] = []
+        for item in self.items {
+            if let data = try? Data(contentsOf: item.imageUrl!) {
+                let image = LightboxImage(image: UIImage(data: data)!, text: item.memo, videoURL: nil)
+                    //LightboxImage(image: UIImage(data: data)!)
+                images.append(image)
+            }
+        }
+        
+        LightboxConfig.CloseButton.text = "";
+        LightboxConfig.loadImage = {
+                        imageView, URL, completion in
+                        imageView.contentMode = .scaleAspectFill
+                    }
+        
+        let controller = LightboxController(images: images, startIndex: indexPath.row)
+        controller.dynamicBackground = true
+
+        self.present(controller, animated: true, completion: nil)
     }
     
 //    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
