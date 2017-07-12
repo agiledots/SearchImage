@@ -129,8 +129,7 @@ extension RootViewController: AssetsPickerViewControllerDelegate{
                     let data = try? Data(contentsOf: imageFile)
                     
                     // ORC
-                    let tesseract = G8Tesseract(language: "eng")
-                    tesseract?.charWhitelist = "01234567890"
+                    let tesseract = G8Tesseract(language: "jpn+eng")
                     tesseract?.image = UIImage(data: data!)
                     tesseract?.recognize()
                     
