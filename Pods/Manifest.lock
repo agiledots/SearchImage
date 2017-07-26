@@ -1,0 +1,56 @@
+PODS:
+  - AssetsPickerViewController (1.1.0):
+    - Dimmer
+    - FadeView
+    - OptionalTypes
+    - PureLayout
+    - SwiftARGB
+    - TinyLog
+  - Dimmer (2.0.0):
+    - FadeView (~> 2.0)
+    - PureLayout
+    - TinyLog (~> 2.0)
+    - UIViewKVO (~> 2.0)
+  - FadeView (2.0.0)
+  - Hue (2.0.1)
+  - ImageViewer (4.1.0)
+  - Lightbox (1.0.0):
+    - Hue
+  - OptionalTypes (1.0.4)
+  - PureLayout (3.0.2)
+  - Realm (2.8.3):
+    - Realm/Headers (= 2.8.3)
+  - Realm/Headers (2.8.3)
+  - RealmSwift (2.8.3):
+    - Realm (= 2.8.3)
+  - SwiftARGB (2.0.0)
+  - TesseractOCRiOS (4.0.0)
+  - TinyLog (2.0.1)
+  - UIViewKVO (2.0.0)
+
+DEPENDENCIES:
+  - AssetsPickerViewController (~> 1.0)
+  - ImageViewer
+  - Lightbox (~> 1.0.0)
+  - RealmSwift (~> 2.0)
+  - TesseractOCRiOS (= 4.0.0)
+
+SPEC CHECKSUMS:
+  AssetsPickerViewController: 3595e558459ff68e994d93ae11b9c9697e1b0fe1
+  Dimmer: f308deefd2e52ea9f59572fb43f9de8c111c82d4
+  FadeView: 80197da2fbee5382b178127e8c5f988a35eef018
+  Hue: 354caec055fdc9d38b5ef33ca2e7224721843baf
+  ImageViewer: 163e5832e0a09e31a3e3482cce6e5e9029356174
+  Lightbox: 13f55a0a840f7945dc5ac87931564e7fe569fca9
+  OptionalTypes: 2c7ee4d718fec7933fb9d55793eced4789cc6089
+  PureLayout: 4d550abe49a94f24c2808b9b95db9131685fe4cd
+  Realm: 3601ef091c8c499a31101d8563b991e75546cdce
+  RealmSwift: 8183818515471b01a99abdd2970f8e4fd52b6f4a
+  SwiftARGB: 8727cfcdcfe8709e707a2391f1d5802a7c40dcad
+  TesseractOCRiOS: 90638afbe43d082433f2e76b384c7901d23956df
+  TinyLog: 1a11500e422b4f5ddc7af3bd08f8d23eac53c87b
+  UIViewKVO: 091f9e020d69e73c4bf5e5ef61cde7bff1c24bbf
+
+PODFILE CHECKSUM: 8cc19aabb1e1c9a96d26ddae131205fc5d26c47e
+
+COCOAPODS: 1.2.1

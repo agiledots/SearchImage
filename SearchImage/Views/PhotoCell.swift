@@ -12,11 +12,31 @@ import UIKit
 class PhotoCell: UICollectionViewCell {
     
     @IBOutlet weak var imageView: UIImageView!
+    @IBOutlet weak var checkImageView: UIImageView!
 
+    var editing:Bool = false {
+        didSet{
+            self.checkImageView?.isHidden = !editing
+        }
+    }
+    
+    override var isSelected: Bool{
+        didSet {
+            self.checkImageView?.image = self.isSelected ? #imageLiteral(resourceName: "check") : #imageLiteral(resourceName: "uncheck")
+        }
+    }
+    
     override func awakeFromNib() {
         super.awakeFromNib()
         
-        imageView.contentMode = .scaleAspectFill
+        self.imageView.contentMode = .scaleAspectFill
+        
+        self.checkImageView?.translatesAutoresizingMaskIntoConstraints = false
+        self.checkImageView?.contentMode = .scaleAspectFit
+        self.checkImageView?.clipsToBounds = true
+        self.checkImageView?.isHidden = true
+        self.checkImageView?.image = #imageLiteral(resourceName: "uncheck")
+        self.contentView.addSubview(self.checkImageView!)
         
     }
     

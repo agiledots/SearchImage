@@ -7,10 +7,11 @@ target 'SearchImage' do
 
   # Pods for SearchImage
   pod 'AssetsPickerViewController', '~> 1.0'
-  pod 'SQLite.swift', '~> 0.11.3'
+  #pod 'SQLite.swift', '~> 0.11.3'
   pod 'TesseractOCRiOS', '4.0.0'
   pod 'Lightbox', '~> 1.0.0'
   pod 'RealmSwift', '~> 2.0'
+  pod 'ImageViewer'
 
 
 end

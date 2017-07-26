@@ -35,6 +35,15 @@ class Photo: Object {
         }
     }
     
+    var thumbnailUrl: URL? {
+        if let path = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first {
+            let imagePath = NSURL(fileURLWithPath: path).appendingPathComponent("Thumbnail")
+            return imagePath?.appendingPathComponent(self.filename)
+        } else {
+            return nil
+        }
+    }
+    
 }
 
 
@@ -64,9 +73,13 @@ class PhotoManager {
         }
     }
     
-    func update(photo: Photo){
+    func update(photo: Photo, memo: String){
         do {
+            print("update photo: \(memo)")
+            realm.beginWrite()
+            photo.memo = memo
             realm.add(photo, update: true)
+            try realm.commitWrite()
         } catch {
             print("update photo error : \(error)")
         }
@@ -99,10 +112,6 @@ class PhotoManager {
         var photos: Results<Photo>?
         
         do {
-//            let predicate = NSPredicate(format: "memo like '*%@*' ", memo)
-//            let predicate = NSPredicate(format: "memo contains '%@'", memo)
-//            photos = realm.objects(Photo.self).filter(predicate).sorted(byKeyPath: "createDate", ascending: false)
-            
             photos = realm.objects(Photo.self).filter("memo contains '\(memo)'").sorted(byKeyPath: "createDate", ascending: false)
         } catch {
             print("query photo by memo error : \(error)")
@@ -110,6 +119,19 @@ class PhotoManager {
         
         return photos
     }
+    
+    func queryNullMemo() -> Results<Photo>? {
+        var photos: Results<Photo>?
+        
+        do {
+            photos = realm.objects(Photo.self).filter("memo = '' ").sorted(byKeyPath: "createDate", ascending: false)
+        } catch {
+            print("query photo by memo error : \(error)")
+        }
+        
+        return photos
+    }
+
     
 }
 
